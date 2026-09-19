@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Macuti — Atendimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+  <!-- Ecrã de acesso -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-mark">MACUTI</div>
+      <h1>Painel de atendimento</h1>
+      <p class="login-sub">Introduz a password de acesso ao painel.</p>
+      <input id="tokenInput" type="password" placeholder="Password" autocomplete="off" />
+      <button id="loginBtn" class="btn btn-primary">Entrar</button>
+      <p id="loginError" class="login-error"></p>
+    </div>
+  </div>
+
+  <!-- Aplicação principal -->
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="brand">MACUTI</span>
+        <span class="brand-sub">Atendimento</span>
+      </div>
+
+      <div class="whatsapp-card" id="whatsappCard">
+        <div class="whatsapp-status">
+          <span class="dot dot-off" id="waDot"></span>
+          <span id="waStatusText">WhatsApp desligado</span>
+        </div>
+        <button id="waConnectBtn" class="btn btn-outline">Ligar WhatsApp</button>
+      </div>
+
+      <div class="conv-list-header">Conversas</div>
+      <div id="convList" class="conv-list"></div>
+    </aside>
+
+    <main class="thread">
+      <div id="threadEmpty" class="thread-empty">
+        Seleciona uma conversa para começar.
+      </div>
+
+      <div id="threadActive" class="thread-active hidden">
+        <div class="thread-header">
+          <span id="threadName" class="thread-name"></span>
+          <span id="threadChannel" class="channel-tag"></span>
+        </div>
+        <div id="threadMessages" class="thread-messages"></div>
+        <form id="replyForm" class="reply-form">
+          <input id="replyInput" type="text" placeholder="Escreve uma resposta…" autocomplete="off" />
+          <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal do QR code -->
+  <div id="qrModal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Ligar o WhatsApp</h2>
+      <p>Abre o WhatsApp no telemóvel da Macuti → <strong>Definições → Dispositivos ligados → Ligar dispositivo</strong> e lê este código.</p>
+      <div id="qrImageWrap" class="qr-wrap">
+        <img id="qrImage" alt="QR code do WhatsApp" />
+      </div>
+      <p id="qrStatusText" class="qr-status">A aguardar leitura do código…</p>
+      <button id="qrCloseBtn" class="btn btn-outline">Fechar</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
