@@ -1,0 +1,19 @@
+{
+  "name": "macuti-chatbot",
+  "version": "1.0.0",
+  "description": "Plataforma de atendimento multicanal da Macuti — WhatsApp (QR code), Telegram, Instagram, Messenger e webchat, com painel de administração feito à medida.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0",
+    "socket.io": "^4.7.5"
+  }
+}
