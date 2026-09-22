@@ -15,8 +15,8 @@
     <div class="login-card">
       <div class="login-mark">MACUTI</div>
       <h1>Painel de atendimento</h1>
-      <p class="login-sub">Introduz a password de acesso ao painel.</p>
-      <input id="tokenInput" type="password" placeholder="Password" autocomplete="off" />
+      <input id="usernameInput" type="text" placeholder="Utilizador" autocomplete="username" />
+      <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn btn-primary">Entrar</button>
       <p id="loginError" class="login-error"></p>
     </div>
@@ -24,41 +24,136 @@
 
   <!-- Aplicação principal -->
   <div id="app" class="app hidden">
-    <aside class="sidebar">
-      <div class="sidebar-header">
+    <header class="topbar">
+      <div class="topbar-brand">
         <span class="brand">MACUTI</span>
         <span class="brand-sub">Atendimento</span>
       </div>
-
-      <div class="whatsapp-card" id="whatsappCard">
-        <div class="whatsapp-status">
-          <span class="dot dot-off" id="waDot"></span>
-          <span id="waStatusText">WhatsApp desligado</span>
-        </div>
-        <button id="waConnectBtn" class="btn btn-outline">Ligar WhatsApp</button>
+      <nav class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="atendimento">Atendimento</button>
+        <button class="tab-btn admin-only" data-tab="relatorios">Relatórios</button>
+        <button class="tab-btn admin-only" data-tab="utilizadores">Utilizadores</button>
+        <button class="tab-btn admin-only" data-tab="fluxo">Fluxo de Chamada</button>
+        <button class="tab-btn admin-only" data-tab="canais">Canais</button>
+      </nav>
+      <div class="topbar-user">
+        <span id="userLabel"></span>
+        <button id="logoutBtn" class="btn btn-outline btn-small">Sair</button>
       </div>
+    </header>
 
-      <div class="conv-list-header">Conversas</div>
-      <div id="convList" class="conv-list"></div>
-    </aside>
-
-    <main class="thread">
-      <div id="threadEmpty" class="thread-empty">
-        Seleciona uma conversa para começar.
-      </div>
-
-      <div id="threadActive" class="thread-active hidden">
-        <div class="thread-header">
-          <span id="threadName" class="thread-name"></span>
-          <span id="threadChannel" class="channel-tag"></span>
+    <!-- Separador: Atendimento -->
+    <section id="tab-atendimento" class="tab-panel active">
+      <aside class="sidebar">
+        <div class="scope-switch">
+          <button class="scope-btn active" data-scope="queue">Fila</button>
+          <button class="scope-btn" data-scope="mine">Minhas</button>
+          <button class="scope-btn admin-only" data-scope="all">Todas</button>
         </div>
-        <div id="threadMessages" class="thread-messages"></div>
-        <form id="replyForm" class="reply-form">
-          <input id="replyInput" type="text" placeholder="Escreve uma resposta…" autocomplete="off" />
-          <button type="submit" class="btn btn-primary">Enviar</button>
+        <select id="departmentFilter" class="select admin-only"></select>
+        <div class="conv-list-header">Conversas</div>
+        <div id="convList" class="conv-list"></div>
+      </aside>
+
+      <main class="thread">
+        <div id="threadEmpty" class="thread-empty">Seleciona uma conversa para começar.</div>
+        <div id="threadActive" class="thread-active hidden">
+          <div class="thread-header">
+            <div class="thread-header-info">
+              <span id="threadName" class="thread-name"></span>
+              <span id="threadChannel" class="channel-tag"></span>
+              <span id="threadDept" class="dept-tag"></span>
+            </div>
+            <div class="thread-actions">
+              <button id="claimBtn" class="btn btn-outline btn-small">Assumir</button>
+              <select id="transferSelect" class="select select-small">
+                <option value="">Transferir para…</option>
+              </select>
+              <button id="closeBtn" class="btn btn-outline btn-small">Fechar</button>
+            </div>
+          </div>
+          <div id="threadMessages" class="thread-messages"></div>
+          <form id="replyForm" class="reply-form">
+            <input id="replyInput" type="text" placeholder="Escreve uma resposta…" autocomplete="off" />
+            <button type="submit" class="btn btn-primary">Enviar</button>
+          </form>
+        </div>
+      </main>
+    </section>
+
+    <!-- Separador: Relatórios -->
+    <section id="tab-relatorios" class="tab-panel">
+      <div class="panel-inner">
+        <h2>Relatórios por secção</h2>
+        <div id="reportByDept" class="report-grid"></div>
+        <h2>Relatórios por canal</h2>
+        <div id="reportByChannel" class="report-grid"></div>
+      </div>
+    </section>
+
+    <!-- Separador: Utilizadores -->
+    <section id="tab-utilizadores" class="tab-panel">
+      <div class="panel-inner">
+        <h2>Utilizadores</h2>
+        <div id="userList" class="user-list"></div>
+
+        <h3>Criar novo utilizador</h3>
+        <form id="userForm" class="form-grid">
+          <input id="newUsername" type="text" placeholder="Utilizador (login)" required />
+          <input id="newFullName" type="text" placeholder="Nome completo" />
+          <input id="newPassword" type="password" placeholder="Password" required />
+          <select id="newRole">
+            <option value="agent">Agente</option>
+            <option value="admin">Administrador</option>
+          </select>
+          <div id="newDepartments" class="checkbox-group"></div>
+          <button type="submit" class="btn btn-primary">Criar utilizador</button>
         </form>
       </div>
-    </main>
+    </section>
+
+    <!-- Separador: Fluxo de Chamada -->
+    <section id="tab-fluxo" class="tab-panel">
+      <div class="flow-toolbar">
+        <button class="btn btn-outline btn-small" data-add="message">+ Mensagem</button>
+        <button class="btn btn-outline btn-small" data-add="menu">+ Menu</button>
+        <button class="btn btn-outline btn-small" data-add="department">+ Departamento</button>
+        <span class="flow-hint">Arrasta os blocos para posicionar. Clica em "Ligar" num bloco e depois no bloco de destino para criar uma seta.</span>
+        <button id="saveFlowBtn" class="btn btn-primary btn-small">Guardar fluxo</button>
+      </div>
+      <div id="flowCanvas" class="flow-canvas">
+        <svg id="flowSvg" class="flow-svg"></svg>
+      </div>
+    </section>
+
+    <!-- Separador: Canais -->
+    <section id="tab-canais" class="tab-panel">
+      <div class="panel-inner">
+        <h2>Canais de atendimento</h2>
+        <div id="channelList" class="user-list"></div>
+
+        <h3>Adicionar / atualizar canal</h3>
+        <form id="channelForm" class="form-grid">
+          <select id="channelType">
+            <option value="whatsapp">WhatsApp (Evolution API)</option>
+            <option value="telegram">Telegram</option>
+            <option value="messenger">Facebook Messenger</option>
+            <option value="instagram">Instagram</option>
+          </select>
+          <input id="channelLabel" type="text" placeholder="Nome (ex: WhatsApp principal)" />
+          <div id="channelFields" class="channel-fields"></div>
+          <button type="submit" class="btn btn-primary">Guardar canal</button>
+        </form>
+
+        <div class="whatsapp-card" id="whatsappCard">
+          <div class="whatsapp-status">
+            <span class="dot dot-off" id="waDot"></span>
+            <span id="waStatusText">WhatsApp desligado</span>
+          </div>
+          <button id="waConnectBtn" class="btn btn-outline">Ligar WhatsApp (ler QR code)</button>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- Modal do QR code -->
@@ -66,9 +161,7 @@
     <div class="modal-card">
       <h2>Ligar o WhatsApp</h2>
       <p>Abre o WhatsApp no telemóvel da Macuti → <strong>Definições → Dispositivos ligados → Ligar dispositivo</strong> e lê este código.</p>
-      <div id="qrImageWrap" class="qr-wrap">
-        <img id="qrImage" alt="QR code do WhatsApp" />
-      </div>
+      <div class="qr-wrap"><img id="qrImage" alt="QR code do WhatsApp" /></div>
       <p id="qrStatusText" class="qr-status">A aguardar leitura do código…</p>
       <button id="qrCloseBtn" class="btn btn-outline">Fechar</button>
     </div>
