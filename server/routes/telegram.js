@@ -1,22 +1,21 @@
 const express = require('express');
 const telegram = require('../channels/telegram');
-const { upsertConversation, addMessage } = require('../db');
+const { handleIncomingMessage } = require('../flow-integration');
 
 function buildTelegramRouter(io) {
   const router = express.Router();
 
-  // Configurar via telegram.setWebhook('https://<o-teu-dominio>/api/telegram/webhook')
   router.post('/webhook', (req, res) => {
     const parsed = telegram.parseIncomingWebhook(req.body);
     if (parsed) {
-      const conversationId = upsertConversation({
+      handleIncomingMessage({
+        io,
         channel: 'telegram',
         external_id: parsed.external_id,
         contact_name: parsed.contact_name,
-        last_message: parsed.text,
+        text: parsed.text,
+        sendReply: (text) => telegram.sendMessage(parsed.external_id, text),
       });
-      addMessage(conversationId, 'in', parsed.text);
-      io.emit('new_message', { conversationId, channel: 'telegram' });
     }
     res.sendStatus(200);
   });

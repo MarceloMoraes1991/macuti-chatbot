@@ -1,43 +1,43 @@
 const express = require('express');
 const whatsapp = require('../channels/whatsapp');
-const { upsertConversation, addMessage } = require('../db');
+const { handleIncomingMessage } = require('../flow-integration');
+const { requireAuth } = require('../auth');
 
 function buildWhatsappRouter(io) {
   const router = express.Router();
 
-  // O painel de admin chama isto em loop (polling) para mostrar o QR code
-  // enquanto o telemóvel não estiver ligado.
-  router.get('/qr', async (req, res) => {
+  // O painel de admin chama isto em loop enquanto o telemóvel não estiver ligado.
+  router.get('/qr', requireAuth, async (req, res) => {
     try {
       const data = await whatsapp.getQrCode();
       res.json(data);
     } catch (err) {
-      res.status(502).json({ error: 'Não foi possível contactar a Evolution API', details: String(err) });
+      res.status(502).json({ error: String(err.message || err) });
     }
   });
 
-  router.get('/status', async (req, res) => {
+  router.get('/status', requireAuth, async (req, res) => {
     try {
       const state = await whatsapp.getStatus();
       res.json({ state });
     } catch (err) {
-      res.status(502).json({ error: 'Não foi possível contactar a Evolution API', details: String(err) });
+      res.status(502).json({ error: String(err.message || err) });
     }
   });
 
-  // Configurar este URL como webhook da instância na Evolution API:
-  // https://<o-teu-dominio>/api/whatsapp/webhook
+  // Configurar como webhook da instância na Evolution API (sem autenticação —
+  // é a Evolution API a chamar-nos, não um utilizador do painel).
   router.post('/webhook', (req, res) => {
     const parsed = whatsapp.parseIncomingWebhook(req.body);
     if (parsed) {
-      const conversationId = upsertConversation({
+      handleIncomingMessage({
+        io,
         channel: 'whatsapp',
         external_id: parsed.external_id,
         contact_name: parsed.contact_name,
-        last_message: parsed.text,
+        text: parsed.text,
+        sendReply: (text) => whatsapp.sendMessage(parsed.external_id, text),
       });
-      addMessage(conversationId, 'in', parsed.text);
-      io.emit('new_message', { conversationId, channel: 'whatsapp' });
     }
     res.sendStatus(200);
   });
