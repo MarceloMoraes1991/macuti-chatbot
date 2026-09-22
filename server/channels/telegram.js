@@ -1,10 +1,17 @@
 const fetch = require('node-fetch');
+const { getActiveChannelConfig } = require('../db');
 
-const { TELEGRAM_BOT_TOKEN } = process.env;
-const API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+function getToken() {
+  const dbConfig = getActiveChannelConfig('telegram');
+  return dbConfig?.credentials?.botToken || process.env.TELEGRAM_BOT_TOKEN;
+}
+
+function apiUrl() {
+  return `https://api.telegram.org/bot${getToken()}`;
+}
 
 async function sendMessage(chatId, text) {
-  const res = await fetch(`${API}/sendMessage`, {
+  const res = await fetch(`${apiUrl()}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text }),
@@ -12,9 +19,8 @@ async function sendMessage(chatId, text) {
   return res.json();
 }
 
-// Regista o webhook no Telegram (correr uma vez após o deploy).
 async function setWebhook(url) {
-  const res = await fetch(`${API}/setWebhook`, {
+  const res = await fetch(`${apiUrl()}/setWebhook`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),

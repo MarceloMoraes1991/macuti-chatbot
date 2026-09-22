@@ -1,25 +1,28 @@
 const fetch = require('node-fetch');
+const { getActiveChannelConfig } = require('../db');
 
-const {
-  EVOLUTION_API_URL,
-  EVOLUTION_API_KEY,
-  EVOLUTION_INSTANCE_NAME,
-} = process.env;
-
-function evoHeaders() {
+// Configuração vem preferencialmente do painel (Canais de atendimento).
+// Se o admin ainda não tiver configurado nada lá, usa o .env como reserva.
+function getConfig() {
+  const dbConfig = getActiveChannelConfig('whatsapp');
   return {
-    'Content-Type': 'application/json',
-    apikey: EVOLUTION_API_KEY,
+    apiUrl: dbConfig?.credentials?.apiUrl || process.env.EVOLUTION_API_URL,
+    apiKey: dbConfig?.credentials?.apiKey || process.env.EVOLUTION_API_KEY,
+    instanceName: dbConfig?.credentials?.instanceName || process.env.EVOLUTION_INSTANCE_NAME || 'macuti',
   };
 }
 
-// Cria a instância na Evolution API (só precisa de correr uma vez).
+function evoHeaders(apiKey) {
+  return { 'Content-Type': 'application/json', apikey: apiKey };
+}
+
 async function createInstance(webhookUrl) {
-  const res = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+  const { apiUrl, apiKey, instanceName } = getConfig();
+  const res = await fetch(`${apiUrl}/instance/create`, {
     method: 'POST',
-    headers: evoHeaders(),
+    headers: evoHeaders(apiKey),
     body: JSON.stringify({
-      instanceName: EVOLUTION_INSTANCE_NAME,
+      instanceName,
       qrcode: true,
       webhook: webhookUrl,
       webhook_by_events: false,
@@ -29,41 +32,34 @@ async function createInstance(webhookUrl) {
   return res.json();
 }
 
-// Devolve o QR code atual (base64) para ligar o telemóvel.
 async function getQrCode() {
-  const res = await fetch(
-    `${EVOLUTION_API_URL}/instance/connect/${EVOLUTION_INSTANCE_NAME}`,
-    { headers: evoHeaders() }
-  );
-  return res.json(); // { base64: 'data:image/png;base64,...' } quando ainda não está ligado
+  const { apiUrl, apiKey, instanceName } = getConfig();
+  if (!apiUrl || !apiKey) throw new Error('WhatsApp ainda não está configurado (falta URL/API key da Evolution API)');
+  const res = await fetch(`${apiUrl}/instance/connect/${instanceName}`, { headers: evoHeaders(apiKey) });
+  return res.json();
 }
 
-// Estado da ligação: "open" (ligado), "close" (desligado), "connecting"
 async function getStatus() {
-  const res = await fetch(
-    `${EVOLUTION_API_URL}/instance/connectionState/${EVOLUTION_INSTANCE_NAME}`,
-    { headers: evoHeaders() }
-  );
+  const { apiUrl, apiKey, instanceName } = getConfig();
+  if (!apiUrl || !apiKey) return 'close';
+  const res = await fetch(`${apiUrl}/instance/connectionState/${instanceName}`, { headers: evoHeaders(apiKey) });
   const data = await res.json();
   return data?.instance?.state || 'close';
 }
 
 async function sendMessage(toNumber, text) {
-  const res = await fetch(
-    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE_NAME}`,
-    {
-      method: 'POST',
-      headers: evoHeaders(),
-      body: JSON.stringify({ number: toNumber, text }),
-    }
-  );
+  const { apiUrl, apiKey, instanceName } = getConfig();
+  const res = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+    method: 'POST',
+    headers: evoHeaders(apiKey),
+    body: JSON.stringify({ number: toNumber, text }),
+  });
   return res.json();
 }
 
-// Normaliza o payload de webhook da Evolution API para o formato interno.
 function parseIncomingWebhook(body) {
   const msg = body?.data;
-  if (!msg || msg.key?.fromMe) return null; // ignora mensagens enviadas por nós
+  if (!msg || msg.key?.fromMe) return null;
 
   const text =
     msg.message?.conversation ||
